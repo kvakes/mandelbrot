@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Buddhabrot</title>
+  <style>
+    body,
+    html {
+      margin: 0;
+      padding: 0;
+    }
+    canvas {
+      display: block;
+      height: 100vh;
+      width: 100vw;
+      background: #000;
+    }
+  </style>
+</head>
+<body>
+
+  <div>
+    <canvas></canvas>
+  </div>
+
+  <script>
+  (function() {
+    var c = document.getElementsByTagName('canvas')[0];
+    var ctx = c.getContext('2d');
+    c.width = c.offsetWidth;
+    c.height = c.offsetHeight;
+
+    // Mandlebrot Test
+    let maxIterations = 100;
+    let threshold = 2;
+    function whenDiverges(r, i) {
+      var origR = r;
+      var origI = i;
+
+      var x, tempR, tempI;
+
+      for (x = 0; x <= maxIterations; x++) {
+        console.log(r, i);
+
+        var absolute = Math.sqrt(Math.pow(r, 2) + Math.pow(i, 2));
+        if (absolute > threshold) {
+          break;
+        }
+
+        tempR = Math.pow(r, 2) - Math.pow(i, 2) + origR;
+        tempI = 2 * r * i + origI;
+
+        r = tempR;
+        i = tempI;
+      }
+
+      return x;
+    }
+
+    // Drawing
+    var center = [c.offsetWidth / 2, c.offsetHeight / 2];
+    var square = 1;
+    var magnification = 200;
+
+    for (var n = 0; n < 20 * Math.pow(10, 3); n++) {
+      var r = Math.random() * square * (Math.random() > 0.5 ? -1 : 1) - 1;
+      var i = Math.random() * square * (Math.random() > 0.5 ? -1 : 1);
+
+      var rgb = [0, 0, 0];
+      var iteration = whenDiverges(r, i);
+      if (iteration < maxIterations) {
+        rgb[0] = Math.round(200);
+        rgb[1] = Math.round(125);
+        rgb[2] = Math.round(255 - iteration / maxIterations * 255);
+      }
+
+      ctx.fillStyle = 'rgb(' + rgb[0] +', ' + rgb[1] +', ' + rgb[2] +')';
+      ctx.fillRect(center[0] + magnification + r * magnification, center[1] + i * magnification, 1, 1);
+    }
+  })();
+  </script>
+</body>
+</html>
