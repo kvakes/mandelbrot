@@ -54,30 +54,32 @@
       return x;
     }
 
-    // Params6
-    var pan = [-0.75, -0.08];
-    var magnification = 200000;
     var aw = c.offsetWidth;
     var ah = c.offsetHeight;
-    var start = [c.offsetWidth / 2 - aw / 2, c.offsetHeight / 2 - ah / 2];
+    var start = [aw / 2, ah / 2];
+
+    // Params
+    var pan = [0, 0];
+    var zoom = 100;
 
     // Drawing
     for (var xc = 0; xc < aw; xc++) {
       for (var yc = 0; yc < ah; yc++) {
+        var pixel = [xc, yc];
+        var pixelRelativeToStart = [pixel[0] - start[0], pixel[1] - start[1]];
+        var zoomedCoordinate = [pixelRelativeToStart[0] / zoom, pixelRelativeToStart[1] / zoom];
+        var panned = [zoomedCoordinate[0] - pan[0], zoomedCoordinate[1] - pan[1]];
+
+        var iteration = whenDiverges(panned[0], panned[1]);
+
         var hsl = [0, 100, 50];
-
-        var r = pan[0] + xc / magnification;
-        var i = pan[1] + yc / magnification;
-        var iteration = whenDiverges(r, i);
-
         if (iteration >= maxIterations) {
           hsl[2] = 0;
         }
-
         hsl[0] = Math.round(360 - iteration / maxIterations * 360);
 
         ctx.fillStyle = 'hsl(' + hsl[0] + ', ' + hsl[1] + '%, ' + hsl[2] +'%)';
-        ctx.fillRect(start[0] + xc, start[1] + yc, 1, 1);
+        ctx.fillRect(pixel[0], pixel[1], 1, 1);
       }
     }
   })();
