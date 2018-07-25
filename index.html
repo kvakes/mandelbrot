@@ -8,17 +8,27 @@
       margin: 0;
       padding: 0;
     }
+    header {
+      position: absolute;
+      left: 0;
+      top: 0;
+    }
     canvas {
       display: block;
       height: 100vh;
       width: 100vw;
       background: #000;
+      cursor: crosshair;
     }
   </style>
 </head>
 <body>
 
   <div>
+    <header>
+      <span id="pan"></span>
+      <span id="zoom"></span>
+    </header>
     <canvas></canvas>
   </div>
 
@@ -30,8 +40,8 @@
     c.height = c.offsetHeight;
 
     // Mandlebrot Test
-    let maxIterations = 100;
-    let threshold = 2;
+    var maxIterations = 100;
+    var threshold = 50;
     function whenDiverges(r, i) {
       var origR = r;
       var origI = i;
@@ -39,8 +49,6 @@
       var x, tempR, tempI;
 
       for (x = 0; x <= maxIterations; x++) {
-        console.log(r, i);
-
         var absolute = Math.sqrt(Math.pow(r, 2) + Math.pow(i, 2));
         if (absolute > threshold) {
           break;
@@ -56,26 +64,74 @@
       return x;
     }
 
+    var aw = c.offsetWidth;
+    var ah = c.offsetHeight;
+    var start = [aw / 2, ah / 2];
+
+    // Params
+    var pan = [0, 0];
+    var zoom = 100;
+
     // Drawing
-    var center = [c.offsetWidth / 2, c.offsetHeight / 2];
-    var square = 1;
-    var magnification = 200;
+    function draw() {
+      var pixels = [];
+      var minIteration = null;
+      var maxIteration = null;
 
-    for (var n = 0; n < 20 * Math.pow(10, 3); n++) {
-      var r = Math.random() * square * (Math.random() > 0.5 ? -1 : 1) - 1;
-      var i = Math.random() * square * (Math.random() > 0.5 ? -1 : 1);
+      for (var xc = 0; xc < aw; xc++) {
+        pixels[xc] = [];
+        for (var yc = 0; yc < ah; yc++) {
+          var pixel = [xc, yc];
+          var pixelRelativeToStart = [pixel[0] - start[0], pixel[1] - start[1]];
+          var zoomedCoordinate = [pixelRelativeToStart[0] / zoom, pixelRelativeToStart[1] / zoom];
+          var panned = [zoomedCoordinate[0] - pan[0], zoomedCoordinate[1] - pan[1]];
 
-      var rgb = [0, 0, 0];
-      var iteration = whenDiverges(r, i);
-      if (iteration < maxIterations) {
-        rgb[0] = Math.round(200);
-        rgb[1] = Math.round(125);
-        rgb[2] = Math.round(255 - iteration / maxIterations * 255);
+          var iteration = whenDiverges(panned[0], panned[1]);
+          pixels[xc][yc] = iteration;
+
+          if (minIteration === null) {
+            minIteration = iteration;
+          } else {
+            minIteration = Math.min(minIteration, iteration);
+          }
+          if (maxIteration === null) {
+            maxIteration = iteration;
+          } else {
+            maxIteration = Math.max(maxIteration, iteration);
+          }
+        }
       }
 
-      ctx.fillStyle = 'rgb(' + rgb[0] +', ' + rgb[1] +', ' + rgb[2] +')';
-      ctx.fillRect(center[0] + magnification + r * magnification, center[1] + i * magnification, 1, 1);
+      for (var p = 0; p < pixels.length; p++) {
+        for (var s = 0; s < pixels[p].length; s++) {
+          var hsl = [0, 100, 50];
+          if (pixels[p][s] >= maxIterations) {
+            hsl[2] = 0;
+          }
+          hsl[0] = Math.round((pixels[p][s] - minIteration) / (maxIteration - minIteration) * 360);
+
+          ctx.fillStyle = 'hsl(' + hsl[0] + ', ' + hsl[1] + '%, ' + hsl[2] +'%)';
+          ctx.fillRect(p, s, 1, 1);
+        }
+      }
     }
+
+    function update() {
+      document.getElementById('pan').innerHTML = 'x: ' + pan[0] + ', y: ' + pan[1];
+      document.getElementById('zoom').innerHTML = 'zoom: ' + zoom;
+    }
+
+    draw();
+    update();
+
+    // Zoom on click
+    c.addEventListener('click', function (e) {
+      pan = [(start[0] - e.x) / zoom + pan[0], (start[1] - e.y) / zoom  + pan[1]];
+      zoom = zoom * 10;
+      maxIterations = Math.sqrt(Math.sqrt(zoom)) * 10 + 20;
+      draw();
+      update();
+    });
   })();
   </script>
 </body>
